@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Budgeting Dashboard</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: #2c3e50;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+
+        .nav-links a.active {
+            background: #3498db;
+            color: #fff;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: #3498db;
+            border-radius: 2px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        button {
+            background: #3498db;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        /* Report Content */
+        .report-content {
+            margin-top: 1.5rem;
+        }
+
+        .report-section {
+            margin-bottom: 2rem;
+        }
+
+        .report-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .report-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .report-card .value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0.5rem 0;
+        }
+
+        .report-card .label {
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            height: 300px;
+            position: relative;
+        }
+
+        .chart-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            text-align: center;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Budgeting Dashboard</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="expenses.html">Expenses</a>
+                <a href="budgets.html">Budgets</a>
+                <a href="categories.html">Categories</a>
+                <a href="reports.html" class="active">Reports</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Main Content -->
+            <div>
+                <!-- Summary Section -->
+                <div class="card">
+                    <h2>Monthly Summary</h2>
+                    <div class="report-content">
+                        <div class="report-grid">
+                            <div class="report-card">
+                                <div class="label">Total Expenses</div>
+                                <div class="value" id="totalExpenses">$0.00</div>
+                            </div>
+                            <div class="report-card">
+                                <div class="label">Average Daily</div>
+                                <div class="value" id="averageDaily">$0.00</div>
+                            </div>
+                            <div class="report-card">
+                                <div class="label">Largest Expense</div>
+                                <div class="value" id="largestExpense">$0.00</div>
+                            </div>
+                            <div class="report-card">
+                                <div class="label">Category Count</div>
+                                <div class="value" id="categoryCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="card">
+                    <h2>Category Breakdown</h2>
+                    <div class="report-content">
+                        <div id="categoryBreakdown">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Trend -->
+                <div class="card">
+                    <h2>Monthly Trend</h2>
+                    <div class="chart-container">
+                        <div class="chart-placeholder">
+                            Monthly expense trend will be displayed here
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Sidebar -->
+            <div>
+                <div class="card">
+                    <h2>Report Filters</h2>
+                    <form id="reportFilters">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" name="startDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" name="endDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <select id="category" name="category">
+                                <option value="">All Categories</option>
+                                <!-- Will be populated by JavaScript -->
+                            </select>
+                        </div>
+
+                        <button type="submit">Generate Report</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/v1';
+
+        // Set default date range (current month)
+        function setDefaultDateRange() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+            document.getElementById('startDate').valueAsDate = firstDay;
+            document.getElementById('endDate').valueAsDate = lastDay;
+        }
+
+        // Load categories for filter
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/categories`);
+                const categories = await response.json();
+                const select = document.getElementById('category');
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Generate report
+        async function generateReport(startDate, endDate, categoryId = '') {
+            try {
+                const url = new URL(`${API_BASE_URL}/expenses/report`);
+                url.searchParams.append('startDate', startDate);
+                url.searchParams.append('endDate', endDate);
+                if (categoryId) {
+                    url.searchParams.append('categoryId', categoryId);
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+                updateReport(data);
+            } catch (error) {
+                console.error('Error generating report:', error);
+            }
+        }
+
+        // Update report content
+        function updateReport(data) {
+            // Update summary cards
+            document.getElementById('totalExpenses').textContent = 
+                `$${data.totalExpenses.toFixed(2)}`;
+            document.getElementById('averageDaily').textContent = 
+                `$${data.averageDaily.toFixed(2)}`;
+            document.getElementById('largestExpense').textContent = 
+                `$${data.largestExpense.toFixed(2)}`;
+            document.getElementById('categoryCount').textContent = 
+                data.categoryCount;
+
+            // Update category breakdown
+            const breakdown = document.getElementById('categoryBreakdown');
+            breakdown.innerHTML = data.categoryBreakdown.map(category => `
+                <div class="report-card">
+                    <div class="label">${category.name}</div>
+                    <div class="value">$${category.total.toFixed(2)}</div>
+                    <div class="label">${((category.total / data.totalExpenses) * 100).toFixed(1)}%</div>
+                </div>
+            `).join('');
+        }
+
+        // Handle form submission
+        document.getElementById('reportFilters').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const categoryId = document.getElementById('category').value;
+
+            await generateReport(startDate, endDate, categoryId);
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setDefaultDateRange();
+            loadCategories();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            generateReport(startDate, endDate);
+        });
+    </script>
+</body>
+</html> 

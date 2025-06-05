@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Budgeting Dashboard</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: #2c3e50;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+
+        .nav-links a.active {
+            background: #3498db;
+            color: #fff;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: #3498db;
+            border-radius: 2px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        button {
+            background: #3498db;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        /* Settings List */
+        .settings-list {
+            list-style: none;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item .label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .settings-item .value {
+            color: #666;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Budgeting Dashboard</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="expenses.html">Expenses</a>
+                <a href="budgets.html">Budgets</a>
+                <a href="categories.html">Categories</a>
+                <a href="reports.html">Reports</a>
+                <a href="settings.html" class="active">Settings</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Main Content -->
+            <div>
+                <!-- General Settings -->
+                <div class="card">
+                    <h2>General Settings</h2>
+                    <form id="generalSettings">
+                        <div class="form-group">
+                            <label for="baseCurrency">Base Currency</label>
+                            <select id="baseCurrency" name="baseCurrency" required>
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="JPY">JPY - Japanese Yen</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dateFormat">Date Format</label>
+                            <select id="dateFormat" name="dateFormat" required>
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="timeZone">Time Zone</label>
+                            <select id="timeZone" name="timeZone" required>
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">Eastern Time</option>
+                                <option value="America/Chicago">Central Time</option>
+                                <option value="America/Denver">Mountain Time</option>
+                                <option value="America/Los_Angeles">Pacific Time</option>
+                            </select>
+                        </div>
+
+                        <button type="submit">Save Settings</button>
+                    </form>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="card">
+                    <h2>Notification Settings</h2>
+                    <form id="notificationSettings">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="budgetAlerts" name="budgetAlerts">
+                                Budget Alerts
+                            </label>
+                            <small class="text-muted">Receive alerts when approaching budget limits</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="weeklyReports" name="weeklyReports">
+                                Weekly Reports
+                            </label>
+                            <small class="text-muted">Receive weekly expense summaries</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="monthlyReports" name="monthlyReports">
+                                Monthly Reports
+                            </label>
+                            <small class="text-muted">Receive monthly budget reports</small>
+                        </div>
+
+                        <button type="submit">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <!-- Current Settings -->
+                <div class="card">
+                    <h2>Current Settings</h2>
+                    <ul class="settings-list" id="currentSettings">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Data Management -->
+                <div class="card">
+                    <h2>Data Management</h2>
+                    <div class="form-group">
+                        <button type="button" id="exportData" class="secondary">Export Data</button>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="clearData" class="danger">Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/v1';
+
+        // Load current settings
+        async function loadSettings() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings`);
+                const settings = await response.json();
+                updateSettingsForm(settings);
+                updateCurrentSettings(settings);
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        // Update settings form with current values
+        function updateSettingsForm(settings) {
+            document.getElementById('baseCurrency').value = settings.baseCurrency;
+            document.getElementById('dateFormat').value = settings.dateFormat;
+            document.getElementById('timeZone').value = settings.timeZone;
+            document.getElementById('budgetAlerts').checked = settings.notifications.budgetAlerts;
+            document.getElementById('weeklyReports').checked = settings.notifications.weeklyReports;
+            document.getElementById('monthlyReports').checked = settings.notifications.monthlyReports;
+        }
+
+        // Update current settings display
+        function updateCurrentSettings(settings) {
+            const list = document.getElementById('currentSettings');
+            list.innerHTML = `
+                <li class="settings-item">
+                    <span class="label">Base Currency</span>
+                    <span class="value">${settings.baseCurrency}</span>
+                </li>
+                <li class="settings-item">
+                    <span class="label">Date Format</span>
+                    <span class="value">${settings.dateFormat}</span>
+                </li>
+                <li class="settings-item">
+                    <span class="label">Time Zone</span>
+                    <span class="value">${settings.timeZone}</span>
+                </li>
+                <li class="settings-item">
+                    <span class="label">Budget Alerts</span>
+                    <span class="value">${settings.notifications.budgetAlerts ? 'Enabled' : 'Disabled'}</span>
+                </li>
+                <li class="settings-item">
+                    <span class="label">Weekly Reports</span>
+                    <span class="value">${settings.notifications.weeklyReports ? 'Enabled' : 'Disabled'}</span>
+                </li>
+                <li class="settings-item">
+                    <span class="label">Monthly Reports</span>
+                    <span class="value">${settings.notifications.monthlyReports ? 'Enabled' : 'Disabled'}</span>
+                </li>
+            `;
+        }
+
+        // Save general settings
+        document.getElementById('generalSettings').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const settings = {
+                baseCurrency: document.getElementById('baseCurrency').value,
+                dateFormat: document.getElementById('dateFormat').value,
+                timeZone: document.getElementById('timeZone').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (response.ok) {
+                    showAlert('Settings saved successfully', 'success');
+                    loadSettings();
+                } else {
+                    showAlert('Error saving settings', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showAlert('Error saving settings', 'error');
+            }
+        });
+
+        // Save notification settings
+        document.getElementById('notificationSettings').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const settings = {
+                notifications: {
+                    budgetAlerts: document.getElementById('budgetAlerts').checked,
+                    weeklyReports: document.getElementById('weeklyReports').checked,
+                    monthlyReports: document.getElementById('monthlyReports').checked
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (response.ok) {
+                    showAlert('Notification settings saved successfully', 'success');
+                    loadSettings();
+                } else {
+                    showAlert('Error saving notification settings', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving notification settings:', error);
+                showAlert('Error saving notification settings', 'error');
+            }
+        });
+
+        // Export data
+        document.getElementById('exportData').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/export`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'budget-data.json';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showAlert('Error exporting data', 'error');
+            }
+        });
+
+        // Clear data
+        document.getElementById('clearData').addEventListener('click', async () => {
+            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/settings/clear`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        showAlert('All data cleared successfully', 'success');
+                        loadSettings();
+                    } else {
+                        showAlert('Error clearing data', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error clearing data:', error);
+                    showAlert('Error clearing data', 'error');
+                }
+            }
+        });
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.grid'));
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+</html> 

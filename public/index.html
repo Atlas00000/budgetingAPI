@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgeting Dashboard</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: #2c3e50;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+
+        .nav-links a.active {
+            background: #3498db;
+            color: #fff;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: #3498db;
+            border-radius: 2px;
+        }
+
+        /* Summary Stats */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stat-card .trend {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .trend.positive {
+            color: #27ae60;
+        }
+
+        .trend.negative {
+            color: #e74c3c;
+        }
+
+        /* Recent Activity */
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .activity-item:hover {
+            background: #f8f9fa;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .activity-meta {
+            font-size: 0.875rem;
+            color: #666;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .activity-amount {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Budget Progress */
+        .budget-progress {
+            margin-top: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.warning {
+            background: #f1c40f;
+        }
+
+        .progress-fill.danger {
+            background: #e74c3c;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .action-button {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+            color: #2c3e50;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .action-button:hover {
+            background: #3498db;
+            color: #fff;
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .activity-meta {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Budgeting Dashboard</h1>
+            <div class="nav-links">
+                <a href="index.html" class="active">Dashboard</a>
+                <a href="expenses.html">Expenses</a>
+                <a href="budgets.html">Budgets</a>
+                <a href="categories.html">Categories</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Summary Stats -->
+        <div class="summary-stats">
+            <div class="stat-card">
+                <h3>Total Expenses</h3>
+                <div class="value" id="totalExpenses">$0.00</div>
+                <div class="trend" id="expenseTrend">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Monthly Budget</h3>
+                <div class="value" id="monthlyBudget">$0.00</div>
+                <div class="trend" id="budgetTrend">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="stat-card">
+                <h3>Remaining</h3>
+                <div class="value" id="remainingBudget">$0.00</div>
+                <div class="trend" id="remainingTrend">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Recent Expenses -->
+            <div class="card">
+                <h2>Recent Expenses</h2>
+                <ul class="activity-list" id="recentExpenses">
+                    <!-- Will be populated by JavaScript -->
+                </ul>
+                <div class="quick-actions">
+                    <a href="expenses.html" class="action-button">Add Expense</a>
+                    <a href="expenses.html" class="action-button">View All</a>
+                </div>
+            </div>
+
+            <!-- Budget Status -->
+            <div class="card">
+                <h2>Budget Status</h2>
+                <div id="budgetStatus">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <div class="quick-actions">
+                    <a href="budgets.html" class="action-button">Manage Budgets</a>
+                    <a href="budgets.html" class="action-button">View Details</a>
+                </div>
+            </div>
+
+            <!-- Category Overview -->
+            <div class="card">
+                <h2>Category Overview</h2>
+                <div id="categoryOverview">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <div class="quick-actions">
+                    <a href="categories.html" class="action-button">Manage Categories</a>
+                    <a href="categories.html" class="action-button">View All</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/v1';
+
+        // Fetch and display data
+        async function loadDashboardData() {
+            try {
+                // Fetch expenses
+                const expensesResponse = await fetch(`${API_BASE_URL}/expenses`);
+                const expenses = await expensesResponse.json();
+                updateRecentExpenses(expenses);
+
+                // Fetch budget status
+                const budgetResponse = await fetch(`${API_BASE_URL}/budgets/status`);
+                const budgetStatus = await budgetResponse.json();
+                updateBudgetStatus(budgetStatus);
+
+                // Fetch categories
+                const categoriesResponse = await fetch(`${API_BASE_URL}/categories`);
+                const categories = await categoriesResponse.json();
+                updateCategoryOverview(categories, expenses);
+
+                // Update summary stats
+                updateSummaryStats(expenses, budgetStatus);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Update UI functions
+        function updateRecentExpenses(expenses) {
+            const container = document.getElementById('recentExpenses');
+            container.innerHTML = expenses.slice(0, 5).map(expense => `
+                <li class="activity-item">
+                    <div class="activity-icon">
+                        ${expense.categoryName.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">${expense.description}</div>
+                        <div class="activity-meta">
+                            <span>${expense.categoryName}</span>
+                            <span>${new Date(expense.date).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                    <div class="activity-amount">$${expense.amount.toFixed(2)}</div>
+                </li>
+            `).join('');
+        }
+
+        function updateBudgetStatus(status) {
+            const container = document.getElementById('budgetStatus');
+            const percentage = (status.spent / status.budget) * 100;
+            const progressClass = percentage >= 90 ? 'danger' : percentage >= 75 ? 'warning' : '';
+
+            container.innerHTML = `
+                <div class="budget-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressClass}" 
+                             style="width: ${percentage}%">
+                        </div>
+                    </div>
+                    <div class="progress-info">
+                        <span>Spent: $${status.spent.toFixed(2)}</span>
+                        <span>Budget: $${status.budget.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCategoryOverview(categories, expenses) {
+            const container = document.getElementById('categoryOverview');
+            const categoryTotals = {};
+
+            // Calculate totals for each category
+            expenses.forEach(expense => {
+                if (!categoryTotals[expense.categoryName]) {
+                    categoryTotals[expense.categoryName] = 0;
+                }
+                categoryTotals[expense.categoryName] += expense.amount;
+            });
+
+            // Create category list
+            container.innerHTML = Object.entries(categoryTotals)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5)
+                .map(([name, total]) => `
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            ${name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-title">${name}</div>
+                        </div>
+                        <div class="activity-amount">$${total.toFixed(2)}</div>
+                    </div>
+                `).join('');
+        }
+
+        function updateSummaryStats(expenses, budgetStatus) {
+            const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            const previousMonthTotal = 0; // This would come from historical data
+            const expenseChange = ((totalExpenses - previousMonthTotal) / previousMonthTotal) * 100;
+
+            document.getElementById('totalExpenses').textContent = 
+                `$${totalExpenses.toFixed(2)}`;
+            document.getElementById('monthlyBudget').textContent = 
+                `$${budgetStatus.budget.toFixed(2)}`;
+            document.getElementById('remainingBudget').textContent = 
+                `$${budgetStatus.remaining.toFixed(2)}`;
+
+            // Update trends
+            document.getElementById('expenseTrend').innerHTML = `
+                <span class="trend ${expenseChange >= 0 ? 'negative' : 'positive'}">
+                    ${expenseChange >= 0 ? '↑' : '↓'} ${Math.abs(expenseChange).toFixed(1)}%
+                </span>
+                vs last month
+            `;
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html> 

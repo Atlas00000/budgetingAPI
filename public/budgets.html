@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Management - Budgeting Dashboard</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-links a {
+            color: #333;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .nav-links a:hover {
+            background: #f0f0f0;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        button {
+            background: #3498db;
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        /* Budget List */
+        .budget-list {
+            list-style: none;
+        }
+
+        .budget-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .budget-item:last-child {
+            border-bottom: none;
+        }
+
+        .budget-info {
+            flex: 1;
+        }
+
+        .budget-category {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .budget-amount {
+            color: #666;
+        }
+
+        .budget-progress {
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .budget-progress-bar {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s ease;
+        }
+
+        .budget-progress-bar.warning {
+            background: #f1c40f;
+        }
+
+        .budget-progress-bar.danger {
+            background: #e74c3c;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Budgeting Dashboard</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="expenses.html">Expenses</a>
+                <a href="budgets.html">Budgets</a>
+                <a href="#categories">Categories</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Budget List -->
+            <div class="card">
+                <h2>Current Budgets</h2>
+                <div id="alert" style="display: none;"></div>
+                <ul class="budget-list" id="budgetList">
+                    <!-- Will be populated by JavaScript -->
+                </ul>
+            </div>
+
+            <!-- Add Budget Form -->
+            <div class="card">
+                <h2>Add New Budget</h2>
+                <form id="budgetForm">
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" required>
+                            <option value="">Select a category</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Monthly Budget Amount</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+                    </div>
+
+                    <button type="submit">Add Budget</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/v1';
+
+        // Load categories and budgets when page loads
+        async function loadData() {
+            try {
+                // Load categories
+                const categoriesResponse = await fetch(`${API_BASE_URL}/categories`);
+                const categories = await categoriesResponse.json();
+                const select = document.getElementById('category');
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+
+                // Load budgets
+                await loadBudgets();
+            } catch (error) {
+                showAlert('Error loading data', 'error');
+            }
+        }
+
+        // Load budgets
+        async function loadBudgets() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/budgets`);
+                const budgets = await response.json();
+                const list = document.getElementById('budgetList');
+                
+                list.innerHTML = budgets.map(budget => `
+                    <li class="budget-item">
+                        <div class="budget-info">
+                            <div class="budget-category">${budget.categoryName}</div>
+                            <div class="budget-amount">
+                                $${budget.spent.toFixed(2)} / $${budget.amount.toFixed(2)}
+                            </div>
+                            <div class="budget-progress">
+                                <div class="budget-progress-bar ${getProgressBarClass(budget.spent, budget.amount)}"
+                                     style="width: ${(budget.spent / budget.amount * 100)}%">
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteBudget(${budget.id})" class="delete-btn">Delete</button>
+                    </li>
+                `).join('');
+            } catch (error) {
+                showAlert('Error loading budgets', 'error');
+            }
+        }
+
+        // Get progress bar class based on spending
+        function getProgressBarClass(spent, budget) {
+            const percentage = (spent / budget) * 100;
+            if (percentage >= 90) return 'danger';
+            if (percentage >= 75) return 'warning';
+            return '';
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Handle form submission
+        document.getElementById('budgetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                categoryId: document.getElementById('category').value,
+                amount: parseFloat(document.getElementById('amount').value)
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/budgets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showAlert('Budget added successfully!', 'success');
+                    e.target.reset();
+                    await loadBudgets();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.message || 'Error adding budget', 'error');
+                }
+            } catch (error) {
+                showAlert('Error adding budget', 'error');
+            }
+        });
+
+        // Delete budget
+        async function deleteBudget(id) {
+            if (!confirm('Are you sure you want to delete this budget?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/budgets/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Budget deleted successfully!', 'success');
+                    await loadBudgets();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.message || 'Error deleting budget', 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting budget', 'error');
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html> 
