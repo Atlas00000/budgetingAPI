@@ -1,4 +1,4 @@
-const Budget = require('../models/Budget');
+import Budget from '../models/Budget.js';
 
 const budgetController = {
     // Get all budgets with optional filters
@@ -131,4 +131,4 @@ const budgetController = {
     }
 };
 
-module.exports = budgetController; 
+export default budgetController; 

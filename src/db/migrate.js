@@ -1,80 +1,102 @@
-const fs = require('fs').promises;
-const path = require('path');
-const Database = require('better-sqlite3');
-const { promisify } = require('util');
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-class DatabaseMigration {
-    constructor(dbPath) {
-        this.dbPath = dbPath;
-        this.db = null;
-    }
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    async init() {
-        // Create migrations table if it doesn't exist
-        this.db = new Database(this.dbPath);
-        this.db.exec(`
-            CREATE TABLE IF NOT EXISTS migrations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-    }
+async function migrate(dbPath) {
+    const db = new sqlite3.Database(dbPath);
 
-    async getExecutedMigrations() {
-        const stmt = this.db.prepare('SELECT name FROM migrations ORDER BY id');
-        return stmt.all().map(row => row.name);
-    }
+    // Create tables if they don't exist
+    await new Promise((resolve, reject) => {
+        db.serialize(() => {
+            // Categories table
+            db.run(`
+                CREATE TABLE IF NOT EXISTS categories (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    is_predefined BOOLEAN DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
 
-    async executeMigration(migrationName, sql) {
-        const stmt = this.db.prepare('INSERT INTO migrations (name) VALUES (?)');
-        this.db.transaction(() => {
-            this.db.exec(sql);
-            stmt.run(migrationName);
-        })();
-    }
+            // Expenses table
+            db.run(`
+                CREATE TABLE IF NOT EXISTS expenses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    category_id INTEGER,
+                    amount REAL NOT NULL,
+                    date TEXT NOT NULL,
+                    description TEXT,
+                    currency_code TEXT DEFAULT 'USD',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (category_id) REFERENCES categories (id)
+                )
+            `);
 
-    async migrate() {
-        try {
-            await this.init();
-            
-            // Get all migration files
-            const migrationsDir = path.join(__dirname, 'migrations');
-            const files = await fs.readdir(migrationsDir);
-            const migrationFiles = files
-                .filter(f => f.endsWith('.sql'))
-                .sort();
+            // Budgets table
+            db.run(`
+                CREATE TABLE IF NOT EXISTS budgets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    category_id INTEGER,
+                    month INTEGER NOT NULL,
+                    year INTEGER NOT NULL,
+                    amount REAL NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (category_id) REFERENCES categories (id),
+                    UNIQUE(category_id, month, year)
+                )
+            `);
 
-            // Get executed migrations
-            const executedMigrations = await this.getExecutedMigrations();
+            // Settings table
+            db.run(`
+                CREATE TABLE IF NOT EXISTS settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT NOT NULL UNIQUE,
+                    value TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
 
-            // Execute new migrations
-            for (const file of migrationFiles) {
-                if (!executedMigrations.includes(file)) {
-                    console.log(`Executing migration: ${file}`);
-                    const sql = await fs.readFile(
-                        path.join(migrationsDir, file),
-                        'utf8'
-                    );
-                    await this.executeMigration(file, sql);
-                    console.log(`Completed migration: ${file}`);
-                }
-            }
+            // Insert default settings if they don't exist
+            db.run(`
+                INSERT OR IGNORE INTO settings (key, value) VALUES
+                ('base_currency', 'USD'),
+                ('date_format', 'YYYY-MM-DD')
+            `);
 
-            console.log('All migrations completed successfully');
-        } catch (error) {
-            console.error('Migration failed:', error);
-            throw error;
-        } finally {
-            if (this.db) {
-                this.db.close();
-            }
-        }
-    }
+            // Insert predefined categories if they don't exist
+            db.run(`
+                INSERT OR IGNORE INTO categories (name, is_predefined) VALUES
+                ('Food & Dining', 1),
+                ('Transportation', 1),
+                ('Housing', 1),
+                ('Utilities', 1),
+                ('Entertainment', 1),
+                ('Shopping', 1),
+                ('Healthcare', 1),
+                ('Education', 1),
+                ('Personal Care', 1),
+                ('Travel', 1)
+            `, (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    });
+
+    // Close the database connection
+    await new Promise((resolve, reject) => {
+        db.close((err) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
 }
 
-// Export a function to run migrations
-module.exports = async function migrate(dbPath) {
-    const migration = new DatabaseMigration(dbPath);
-    await migration.migrate();
-}; 
+export default migrate; 

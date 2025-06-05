@@ -1,36 +1,61 @@
-const db = require('../config/database');
+import db from '../config/database.js';
 
 class Settings {
     static async get(key) {
-        const stmt = db.getConnection().prepare('SELECT value FROM settings WHERE key = ?');
-        const result = stmt.get(key);
-        return result ? result.value : null;
+        return new Promise((resolve, reject) => {
+            db.getConnection().get(
+                'SELECT value FROM settings WHERE key = ?',
+                [key],
+                (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row ? row.value : null);
+                }
+            );
+        });
     }
 
     static async set(key, value) {
-        const stmt = db.getConnection().prepare(`
-            INSERT INTO settings (key, value) 
-            VALUES (?, ?) 
-            ON CONFLICT(key) DO UPDATE SET 
-                value = excluded.value,
-                updated_at = CURRENT_TIMESTAMP
-        `);
-        stmt.run(key, value);
-        return this.get(key);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                [key, value],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve({ success: true });
+                }
+            );
+        });
     }
 
     static async getAll() {
-        const stmt = db.getConnection().prepare('SELECT key, value FROM settings');
-        const results = stmt.all();
-        return results.reduce((acc, { key, value }) => {
-            acc[key] = value;
-            return acc;
-        }, {});
+        return new Promise((resolve, reject) => {
+            db.getConnection().all(
+                'SELECT key, value FROM settings',
+                (err, rows) => {
+                    if (err) reject(err);
+                    else {
+                        const settings = {};
+                        rows.forEach(row => {
+                            settings[row.key] = row.value;
+                        });
+                        resolve(settings);
+                    }
+                }
+            );
+        });
     }
 
     static async delete(key) {
-        const stmt = db.getConnection().prepare('DELETE FROM settings WHERE key = ?');
-        return stmt.run(key);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'DELETE FROM settings WHERE key = ?',
+                [key],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve({ success: true });
+                }
+            );
+        });
     }
 
     // Helper methods for common settings
@@ -59,4 +84,4 @@ class Settings {
     }
 }
 
-module.exports = Settings; 
+export default Settings; 

@@ -337,15 +337,14 @@
     </div>
 
     <script>
-        const API_BASE_URL = '/v1';
+        const API_BASE_URL = '/api/v1';
 
-        // Load current settings
+        // Fetch and display settings
         async function loadSettings() {
             try {
                 const response = await fetch(`${API_BASE_URL}/settings`);
                 const settings = await response.json();
-                updateSettingsForm(settings);
-                updateCurrentSettings(settings);
+                displaySettings(settings);
             } catch (error) {
                 console.error('Error loading settings:', error);
             }

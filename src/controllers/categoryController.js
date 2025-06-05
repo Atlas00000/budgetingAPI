@@ -1,4 +1,4 @@
-const Category = require('../models/Category');
+import Category from '../models/Category.js';
 
 const categoryController = {
     // Get all categories
@@ -40,7 +40,7 @@ const categoryController = {
                 return res.status(400).json({
                     error: {
                         status: 400,
-                        message: 'Category name already exists'
+                        message: 'Category with this name already exists'
                     }
                 });
             }
@@ -67,7 +67,7 @@ const categoryController = {
                 return res.status(400).json({
                     error: {
                         status: 400,
-                        message: 'Category name already exists'
+                        message: 'Category with this name already exists'
                     }
                 });
             }
@@ -83,7 +83,7 @@ const categoryController = {
                 return res.status(404).json({
                     error: {
                         status: 404,
-                        message: 'Category not found'
+                        message: 'Category not found or cannot be deleted'
                     }
                 });
             }
@@ -114,4 +114,4 @@ const categoryController = {
     }
 };
 
-module.exports = categoryController; 
+export default categoryController; 

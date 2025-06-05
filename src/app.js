@@ -1,38 +1,32 @@
-const express = require('express');
-const path = require('path');
-const logger = require('./middleware/logger');
-const errorHandler = require('./middleware/errorHandler');
-const v1Routes = require('./routes/v1');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import v1Routes from './routes/v1/index.js';
 
-// Create Express app
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(logger);
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from public directory
+// Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// API Routes
-app.use('/v1', v1Routes);
+// API routes
+app.use('/api/v1', v1Routes);
 
-// Root route redirect to index.html
-app.get('/', (req, res) => {
-    res.redirect('/index.html');
-});
-
-// Error handling
-app.use(errorHandler);
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.status || 500).json({
         error: {
-            status: 404,
-            message: 'Not Found'
+            status: err.status || 500,
+            message: err.message || 'Internal Server Error'
         }
     });
 });
 
-module.exports = app; 
+export default app; 

@@ -1,12 +1,10 @@
-const Expense = require('../models/Expense');
-const Currency = require('../models/Currency');
+import Expense from '../models/Expense.js';
 
 const expenseController = {
-    // Get all expenses with optional filters
+    // Get all expenses
     getAll: async (req, res, next) => {
         try {
-            const { startDate, endDate, categoryId } = req.query;
-            const expenses = await Expense.findAll({ startDate, endDate, categoryId });
+            const expenses = await Expense.findAll(req.query);
             res.json(expenses);
         } catch (error) {
             next(error);
@@ -34,13 +32,13 @@ const expenseController = {
     // Create new expense
     create: async (req, res, next) => {
         try {
-            const { date, amount, currencyCode, categoryId, description } = req.body;
+            const { categoryId, amount, date, description, currencyCode } = req.body;
             const expense = await Expense.create({
-                date,
-                amount,
-                currencyCode,
                 categoryId,
-                description
+                amount,
+                date,
+                description,
+                currencyCode
             });
             res.status(201).json(expense);
         } catch (error) {
@@ -51,13 +49,13 @@ const expenseController = {
     // Update expense
     update: async (req, res, next) => {
         try {
-            const { date, amount, currencyCode, categoryId, description } = req.body;
+            const { categoryId, amount, date, description, currencyCode } = req.body;
             const expense = await Expense.update(req.params.id, {
-                date,
-                amount,
-                currencyCode,
                 categoryId,
-                description
+                amount,
+                date,
+                description,
+                currencyCode
             });
             if (!expense) {
                 return res.status(404).json({
@@ -94,40 +92,27 @@ const expenseController = {
     // Get expenses by category
     getByCategory: async (req, res, next) => {
         try {
-            const { startDate, endDate } = req.query;
-            if (!startDate || !endDate) {
-                return res.status(400).json({
-                    error: {
-                        status: 400,
-                        message: 'Start date and end date are required'
-                    }
-                });
-            }
-            const expenses = await Expense.getTotalByCategory(startDate, endDate);
+            const { categoryId } = req.params;
+            const expenses = await Expense.findAll({
+                ...req.query,
+                categoryId: parseInt(categoryId)
+            });
             res.json(expenses);
         } catch (error) {
             next(error);
         }
     },
 
-    // Get total expenses for date range
+    // Get total expenses
     getTotal: async (req, res, next) => {
         try {
-            const { startDate, endDate, currencyCode } = req.query;
-            if (!startDate || !endDate || !currencyCode) {
-                return res.status(400).json({
-                    error: {
-                        status: 400,
-                        message: 'Start date, end date, and currency code are required'
-                    }
-                });
-            }
-            const total = await Expense.getTotalByDateRange(startDate, endDate, currencyCode);
-            res.json({ total });
+            const { startDate, endDate } = req.query;
+            const totals = await Expense.getTotalByCategory(startDate, endDate);
+            res.json(totals);
         } catch (error) {
             next(error);
         }
     }
 };
 
-module.exports = expenseController; 
+export default expenseController; 

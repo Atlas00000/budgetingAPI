@@ -1,10 +1,9 @@
 import Joi from 'joi';
 
-// Simple request validation middleware
-const validate = (schema, options = {}) => {
+export const validateRequest = (schema) => {
     return (req, res, next) => {
         const { error } = schema.validate(
-            options.query ? req.query : req.body,
+            req.method === 'GET' ? req.query : req.body,
             { abortEarly: false }
         );
 
@@ -23,6 +22,4 @@ const validate = (schema, options = {}) => {
 
         next();
     };
-};
-
-export default validate; 
+}; 

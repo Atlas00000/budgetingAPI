@@ -1,5 +1,5 @@
-const db = require('../config/database');
-const Expense = require('./Expense');
+import db from '../config/database.js';
+import Expense from './Expense.js';
 
 class Budget {
     static async findAll(filters = {}) {
@@ -27,39 +27,83 @@ class Budget {
 
         query += ' ORDER BY b.year DESC, b.month DESC';
 
-        const stmt = db.getConnection().prepare(query);
-        return stmt.all(...params);
+        return new Promise((resolve, reject) => {
+            db.getConnection().all(query, params, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
     }
 
     static async findById(id) {
-        const stmt = db.getConnection().prepare(`
-            SELECT b.*, c.name as category_name 
-            FROM budgets b 
-            LEFT JOIN categories c ON b.category_id = c.id 
-            WHERE b.id = ?
-        `);
-        return stmt.get(id);
+        return new Promise((resolve, reject) => {
+            db.getConnection().get(
+                `SELECT b.*, c.name as category_name 
+                FROM budgets b 
+                LEFT JOIN categories c ON b.category_id = c.id 
+                WHERE b.id = ?`,
+                [id],
+                (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                }
+            );
+        });
     }
 
     static async create({ categoryId, month, year, amount }) {
-        const stmt = db.getConnection().prepare(
-            'INSERT INTO budgets (category_id, month, year, amount) VALUES (?, ?, ?, ?)'
-        );
-        const result = stmt.run(categoryId, month, year, amount);
-        return this.findById(result.lastInsertRowid);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'INSERT INTO budgets (category_id, month, year, amount) VALUES (?, ?, ?, ?)',
+                [categoryId, month, year, amount],
+                async function(err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    try {
+                        const budget = await this.findById(this.lastID);
+                        resolve(budget);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }.bind(this)
+            );
+        });
     }
 
     static async update(id, { categoryId, month, year, amount }) {
-        const stmt = db.getConnection().prepare(
-            'UPDATE budgets SET category_id = ?, month = ?, year = ?, amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        );
-        stmt.run(categoryId, month, year, amount, id);
-        return this.findById(id);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'UPDATE budgets SET category_id = ?, month = ?, year = ?, amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [categoryId, month, year, amount, id],
+                async (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    try {
+                        const budget = await this.findById(id);
+                        resolve(budget);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            );
+        });
     }
 
     static async delete(id) {
-        const stmt = db.getConnection().prepare('DELETE FROM budgets WHERE id = ?');
-        return stmt.run(id);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'DELETE FROM budgets WHERE id = ?',
+                [id],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve({ success: true });
+                }
+            );
+        });
     }
 
     static async getBudgetStatus(month, year, categoryId = null) {
@@ -73,30 +117,42 @@ class Budget {
         const budgetParams = categoryId 
             ? [month, year, categoryId]
             : [month, year];
-        const budgetStmt = db.getConnection().prepare(budgetQuery);
-        const budget = budgetStmt.get(...budgetParams);
 
-        if (!budget) {
-            return null;
-        }
+        return new Promise((resolve, reject) => {
+            db.getConnection().get(budgetQuery, budgetParams, async (err, budget) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
 
-        // Get expenses
-        const expenses = await Expense.findAll({
-            startDate,
-            endDate,
-            categoryId
+                if (!budget) {
+                    resolve(null);
+                    return;
+                }
+
+                try {
+                    // Get expenses
+                    const expenses = await Expense.findAll({
+                        startDate,
+                        endDate,
+                        categoryId
+                    });
+
+                    // Calculate total spent
+                    const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+                    resolve({
+                        budget: budget.amount,
+                        spent: totalSpent,
+                        remaining: budget.amount - totalSpent,
+                        percentageUsed: (totalSpent / budget.amount) * 100
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            });
         });
-
-        // Calculate total spent
-        const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-
-        return {
-            budget: budget.amount,
-            spent: totalSpent,
-            remaining: budget.amount - totalSpent,
-            percentageUsed: (totalSpent / budget.amount) * 100
-        };
     }
 }
 
-module.exports = Budget; 
+export default Budget; 

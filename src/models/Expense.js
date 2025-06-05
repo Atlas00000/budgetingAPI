@@ -1,13 +1,14 @@
-const db = require('../config/database');
-const Currency = require('./Currency');
+import db from '../config/database.js';
 
 class Expense {
     static async findAll(filters = {}) {
-        let query = 'SELECT e.*, c.name as category_name, cur.code as currency_code FROM expenses e ' +
-                   'JOIN categories c ON e.category_id = c.id ' +
-                   'JOIN currencies cur ON e.currency_code = cur.code';
+        let query = `
+            SELECT e.*, c.name as category_name 
+            FROM expenses e 
+            LEFT JOIN categories c ON e.category_id = c.id
+        `;
         const params = [];
-        
+
         if (filters.startDate) {
             query += ' WHERE e.date >= ?';
             params.push(filters.startDate);
@@ -22,78 +23,105 @@ class Expense {
             query += ' e.category_id = ?';
             params.push(filters.categoryId);
         }
-        
+
         query += ' ORDER BY e.date DESC';
-        
-        const stmt = db.getConnection().prepare(query);
-        return stmt.all(...params);
+
+        return new Promise((resolve, reject) => {
+            db.getConnection().all(query, params, (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
     }
 
     static async findById(id) {
-        const stmt = db.getConnection().prepare(
-            'SELECT e.*, c.name as category_name, cur.code as currency_code FROM expenses e ' +
-            'JOIN categories c ON e.category_id = c.id ' +
-            'JOIN currencies cur ON e.currency_code = cur.code ' +
-            'WHERE e.id = ?'
-        );
-        return stmt.get(id);
+        return new Promise((resolve, reject) => {
+            db.getConnection().get(
+                `SELECT e.*, c.name as category_name 
+                FROM expenses e 
+                LEFT JOIN categories c ON e.category_id = c.id 
+                WHERE e.id = ?`,
+                [id],
+                (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                }
+            );
+        });
     }
 
-    static async create({ date, amount, currencyCode, categoryId, description = '' }) {
-        const stmt = db.getConnection().prepare(
-            'INSERT INTO expenses (date, amount, currency_code, category_id, description) VALUES (?, ?, ?, ?, ?)'
-        );
-        const result = stmt.run(date, amount, currencyCode, categoryId, description);
-        return this.findById(result.lastInsertRowid);
+    static async create({ categoryId, amount, date, description, currencyCode }) {
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'INSERT INTO expenses (category_id, amount, date, description, currency_code) VALUES (?, ?, ?, ?, ?)',
+                [categoryId, amount, date, description, currencyCode],
+                async function(err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    try {
+                        const expense = await this.findById(this.lastID);
+                        resolve(expense);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }.bind(this)
+            );
+        });
     }
 
-    static async update(id, { date, amount, currencyCode, categoryId, description }) {
-        const stmt = db.getConnection().prepare(
-            'UPDATE expenses SET date = ?, amount = ?, currency_code = ?, category_id = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        );
-        stmt.run(date, amount, currencyCode, categoryId, description, id);
-        return this.findById(id);
+    static async update(id, { categoryId, amount, date, description, currencyCode }) {
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'UPDATE expenses SET category_id = ?, amount = ?, date = ?, description = ?, currency_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                [categoryId, amount, date, description, currencyCode, id],
+                async (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    try {
+                        const expense = await this.findById(id);
+                        resolve(expense);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            );
+        });
     }
 
     static async delete(id) {
-        const stmt = db.getConnection().prepare('DELETE FROM expenses WHERE id = ?');
-        return stmt.run(id);
+        return new Promise((resolve, reject) => {
+            db.getConnection().run(
+                'DELETE FROM expenses WHERE id = ?',
+                [id],
+                (err) => {
+                    if (err) reject(err);
+                    else resolve({ success: true });
+                }
+            );
+        });
     }
 
     static async getTotalByCategory(startDate, endDate) {
-        const stmt = db.getConnection().prepare(`
-            SELECT 
-                c.name as category_name,
-                SUM(e.amount) as total_amount,
-                e.currency_code
-            FROM expenses e
-            JOIN categories c ON e.category_id = c.id
-            WHERE e.date BETWEEN ? AND ?
-            GROUP BY c.id, e.currency_code
-            ORDER BY total_amount DESC
-        `);
-        return stmt.all(startDate, endDate);
-    }
-
-    static async getTotalByDateRange(startDate, endDate, targetCurrencyCode) {
-        const expenses = await this.findAll({ startDate, endDate });
-        let total = 0;
-
-        for (const expense of expenses) {
-            if (expense.currency_code === targetCurrencyCode) {
-                total += expense.amount;
-            } else {
-                const convertedAmount = await Currency.convertAmount(
-                    expense.amount,
-                    expense.currency_code,
-                    targetCurrencyCode
-                );
-                total += convertedAmount;
-            }
-        }
-
-        return total;
+        return new Promise((resolve, reject) => {
+            db.getConnection().all(
+                `SELECT c.name as category_name, SUM(e.amount) as total
+                FROM expenses e
+                LEFT JOIN categories c ON e.category_id = c.id
+                WHERE e.date BETWEEN ? AND ?
+                GROUP BY e.category_id
+                ORDER BY total DESC`,
+                [startDate, endDate],
+                (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                }
+            );
+        });
     }
 }
 
-module.exports = Expense; 
+export default Expense; 

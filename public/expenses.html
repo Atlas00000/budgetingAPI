@@ -63,6 +63,7 @@
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
 
         .form-group {
@@ -124,9 +125,68 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* Expenses List */
+        .expenses-list {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .expenses-list h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .expense-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            align-items: center;
+        }
+
+        .expense-item:last-child {
+            border-bottom: none;
+        }
+
+        .expense-header {
+            font-weight: bold;
+            color: #2c3e50;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .expense-amount {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .expense-category {
+            color: #666;
+        }
+
+        .expense-date {
+            color: #666;
+        }
+
+        .expense-description {
+            color: #666;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .nav-links {
+                display: none;
+            }
+
+            .expense-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .expense-header {
                 display: none;
             }
         }
@@ -176,10 +236,24 @@
                 <button type="submit">Add Expense</button>
             </form>
         </div>
+
+        <div class="expenses-list">
+            <h2>Recent Expenses</h2>
+            <div class="expense-item expense-header">
+                <div>Description</div>
+                <div>Amount</div>
+                <div>Category</div>
+                <div>Date</div>
+                <div>Actions</div>
+            </div>
+            <div id="expensesList">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script>
-        const API_BASE_URL = '/v1';
+        const API_BASE_URL = '/api/v1';
 
         // Load categories when page loads
         async function loadCategories() {
@@ -199,27 +273,76 @@
             }
         }
 
+        // Load expenses when page loads
+        async function loadExpenses() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/expenses`);
+                const expenses = await response.json();
+                const expensesList = document.getElementById('expensesList');
+                expensesList.innerHTML = '';
+
+                expenses.forEach(expense => {
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item';
+                    expenseItem.innerHTML = `
+                        <div class="expense-description">${expense.description}</div>
+                        <div class="expense-amount">$${expense.amount.toFixed(2)} ${expense.currency_code}</div>
+                        <div class="expense-category">${expense.category_name}</div>
+                        <div class="expense-date">${new Date(expense.date).toLocaleDateString()}</div>
+                        <div>
+                            <button onclick="deleteExpense(${expense.id})" style="background: #e74c3c;">Delete</button>
+                        </div>
+                    `;
+                    expensesList.appendChild(expenseItem);
+                });
+            } catch (error) {
+                showAlert('Error loading expenses', 'error');
+            }
+        }
+
+        // Delete expense
+        async function deleteExpense(id) {
+            if (!confirm('Are you sure you want to delete this expense?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Expense deleted successfully', 'success');
+                    loadExpenses();
+                } else {
+                    showAlert('Error deleting expense', 'error');
+                }
+            } catch (error) {
+                showAlert('Error deleting expense', 'error');
+            }
+        }
+
         // Show alert message
         function showAlert(message, type) {
             const alert = document.getElementById('alert');
             alert.textContent = message;
             alert.className = `alert alert-${type}`;
             alert.style.display = 'block';
-            
             setTimeout(() => {
                 alert.style.display = 'none';
-            }, 5000);
+            }, 3000);
         }
 
         // Handle form submission
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const formData = {
                 description: document.getElementById('description').value,
-                amount: parseFloat(document.getElementById('amount').value),
+                amount: document.getElementById('amount').value,
                 categoryId: document.getElementById('category').value,
-                date: document.getElementById('date').value
+                date: document.getElementById('date').value,
+                currencyCode: 'USD' // Default to USD for now
             };
 
             try {
@@ -232,22 +355,23 @@
                 });
 
                 if (response.ok) {
-                    showAlert('Expense added successfully!', 'success');
-                    e.target.reset();
+                    showAlert('Expense added successfully', 'success');
+                    document.getElementById('expenseForm').reset();
+                    loadExpenses();
                 } else {
                     const error = await response.json();
-                    showAlert(error.message || 'Error adding expense', 'error');
+                    showAlert(error.error.message || 'Error adding expense', 'error');
                 }
             } catch (error) {
                 showAlert('Error adding expense', 'error');
             }
         });
 
-        // Set default date to today
-        document.getElementById('date').valueAsDate = new Date();
-
-        // Load categories when page loads
-        document.addEventListener('DOMContentLoaded', loadCategories);
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadExpenses();
+        });
     </script>
 </body>
 </html> 

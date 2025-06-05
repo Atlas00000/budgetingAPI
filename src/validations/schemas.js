@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 const schemas = {
     // Category schemas
@@ -39,13 +39,13 @@ const schemas = {
     // Budget schemas
     budget: {
         create: Joi.object({
-            categoryId: Joi.number().integer().required(),
+            categoryId: Joi.number().integer().allow(null),
             month: Joi.number().integer().min(1).max(12).required(),
             year: Joi.number().integer().min(2000).max(2100).required(),
             amount: Joi.number().precision(2).required().min(0)
         }),
         update: Joi.object({
-            categoryId: Joi.number().integer(),
+            categoryId: Joi.number().integer().allow(null),
             month: Joi.number().integer().min(1).max(12),
             year: Joi.number().integer().min(2000).max(2100),
             amount: Joi.number().precision(2).min(0)
@@ -53,7 +53,7 @@ const schemas = {
         query: Joi.object({
             month: Joi.number().integer().min(1).max(12),
             year: Joi.number().integer().min(2000).max(2100),
-            categoryId: Joi.number().integer()
+            categoryId: Joi.number().integer().allow(null)
         })
     },
 
@@ -76,4 +76,4 @@ const schemas = {
     }
 };
 
-module.exports = schemas; 
+export default schemas; 

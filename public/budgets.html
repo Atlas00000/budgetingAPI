@@ -176,6 +176,7 @@
             padding: 1rem;
             border-radius: 4px;
             margin-bottom: 1rem;
+            display: none;
         }
 
         .alert-success {
@@ -188,6 +189,24 @@
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: "Loading...";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
         }
 
         /* Responsive Design */
@@ -216,6 +235,7 @@
     </header>
 
     <div class="container">
+        <div id="alert" class="alert"></div>
         <div class="grid">
             <!-- Budget List -->
             <div class="card">
@@ -232,14 +252,41 @@
                 <form id="budgetForm">
                     <div class="form-group">
                         <label for="category">Category</label>
-                        <select id="category" name="category" required>
-                            <option value="">Select a category</option>
+                        <select id="category" name="category">
+                            <option value="">Overall Budget</option>
                             <!-- Will be populated by JavaScript -->
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="amount">Monthly Budget Amount</label>
+                        <label for="month">Month</label>
+                        <select id="month" name="month" required>
+                            <option value="">Select Month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <select id="year" name="year" required>
+                            <option value="">Select Year</option>
+                            <!-- Will be populated by JavaScript -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Amount</label>
                         <input type="number" id="amount" name="amount" step="0.01" min="0" required>
                     </div>
 
@@ -250,15 +297,93 @@
     </div>
 
     <script>
-        const API_BASE_URL = '/v1';
+        const API_BASE_URL = '/api/v1';
 
-        // Load categories and budgets when page loads
-        async function loadData() {
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            if (!alert) return;
+            
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        // Calculate progress bar class
+        function getProgressClass(used, total) {
+            if (!total) return '';
+            const percentage = (used / total) * 100;
+            if (percentage >= 90) return 'danger';
+            if (percentage >= 75) return 'warning';
+            return '';
+        }
+
+        // Load budgets when page loads
+        async function loadBudgets() {
+            const budgetList = document.querySelector('.budget-list');
+            if (!budgetList) return;
+
             try {
-                // Load categories
-                const categoriesResponse = await fetch(`${API_BASE_URL}/categories`);
-                const categories = await categoriesResponse.json();
-                const select = document.getElementById('category');
+                budgetList.classList.add('loading');
+                
+                const response = await fetch(`${API_BASE_URL}/budgets`);
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error?.message || 'Failed to load budgets');
+                }
+                
+                const budgets = await response.json();
+                budgetList.innerHTML = '';
+                
+                if (!budgets || budgets.length === 0) {
+                    budgetList.innerHTML = '<li class="budget-item">No budgets found</li>';
+                    return;
+                }
+                
+                budgets.forEach(budget => {
+                    const li = document.createElement('li');
+                    li.className = 'budget-item';
+                    li.innerHTML = `
+                        <div class="budget-info">
+                            <div class="budget-category">${budget.category_name || 'Overall'}</div>
+                            <div class="budget-amount">$${budget.amount.toFixed(2)} / month</div>
+                            <div class="budget-progress">
+                                <div class="budget-progress-bar ${getProgressClass(budget.used || 0, budget.amount)}" 
+                                     style="width: ${Math.min(((budget.used || 0) / budget.amount) * 100, 100)}%">
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteBudget(${budget.id})" style="background: #e74c3c;">Delete</button>
+                    `;
+                    budgetList.appendChild(li);
+                });
+            } catch (error) {
+                showAlert(error.message || 'Error loading budgets', 'error');
+            } finally {
+                budgetList.classList.remove('loading');
+            }
+        }
+
+        // Load categories for the form
+        async function loadCategories() {
+            const select = document.getElementById('category');
+            if (!select) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/categories`);
+                if (!response.ok) {
+                    throw new Error('Failed to load categories');
+                }
+                
+                const categories = await response.json();
+                select.innerHTML = '<option value="">Overall Budget</option>';
+                
+                if (!categories || categories.length === 0) {
+                    return;
+                }
                 
                 categories.forEach(category => {
                     const option = document.createElement('option');
@@ -266,72 +391,61 @@
                     option.textContent = category.name;
                     select.appendChild(option);
                 });
-
-                // Load budgets
-                await loadBudgets();
             } catch (error) {
-                showAlert('Error loading data', 'error');
+                showAlert(error.message || 'Error loading categories', 'error');
             }
         }
 
-        // Load budgets
-        async function loadBudgets() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/budgets`);
-                const budgets = await response.json();
-                const list = document.getElementById('budgetList');
-                
-                list.innerHTML = budgets.map(budget => `
-                    <li class="budget-item">
-                        <div class="budget-info">
-                            <div class="budget-category">${budget.categoryName}</div>
-                            <div class="budget-amount">
-                                $${budget.spent.toFixed(2)} / $${budget.amount.toFixed(2)}
-                            </div>
-                            <div class="budget-progress">
-                                <div class="budget-progress-bar ${getProgressBarClass(budget.spent, budget.amount)}"
-                                     style="width: ${(budget.spent / budget.amount * 100)}%">
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="deleteBudget(${budget.id})" class="delete-btn">Delete</button>
-                    </li>
-                `).join('');
-            } catch (error) {
-                showAlert('Error loading budgets', 'error');
-            }
-        }
+        // Populate year select
+        function populateYearSelect() {
+            const yearSelect = document.getElementById('year');
+            if (!yearSelect) return;
 
-        // Get progress bar class based on spending
-        function getProgressBarClass(spent, budget) {
-            const percentage = (spent / budget) * 100;
-            if (percentage >= 90) return 'danger';
-            if (percentage >= 75) return 'warning';
-            return '';
-        }
-
-        // Show alert message
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.textContent = message;
-            alert.className = `alert alert-${type}`;
-            alert.style.display = 'block';
+            const currentYear = new Date().getFullYear();
+            yearSelect.innerHTML = '<option value="">Select Year</option>';
             
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 5000);
+            for (let year = currentYear; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
         }
 
         // Handle form submission
-        document.getElementById('budgetForm').addEventListener('submit', async (e) => {
+        document.getElementById('budgetForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const formData = {
-                categoryId: document.getElementById('category').value,
-                amount: parseFloat(document.getElementById('amount').value)
-            };
+
+            const form = e.target;
+            if (!form) return;
+
+            const categorySelect = form.querySelector('#category');
+            const monthSelect = form.querySelector('#month');
+            const yearSelect = form.querySelector('#year');
+            const amountInput = form.querySelector('#amount');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            if (!categorySelect || !monthSelect || !yearSelect || !amountInput || !submitButton) {
+                showAlert('Form elements not found', 'error');
+                return;
+            }
+
+            // Disable form while submitting
+            submitButton.disabled = true;
+            submitButton.textContent = 'Adding...';
 
             try {
+                const formData = {
+                    categoryId: categorySelect.value || null,
+                    month: parseInt(monthSelect.value),
+                    year: parseInt(yearSelect.value),
+                    amount: parseFloat(amountInput.value)
+                };
+
+                if (!formData.month || !formData.year || !formData.amount) {
+                    throw new Error('Please fill in all required fields');
+                }
+
                 const response = await fetch(`${API_BASE_URL}/budgets`, {
                     method: 'POST',
                     headers: {
@@ -340,42 +454,53 @@
                     body: JSON.stringify(formData)
                 });
 
-                if (response.ok) {
-                    showAlert('Budget added successfully!', 'success');
-                    e.target.reset();
-                    await loadBudgets();
-                } else {
-                    const error = await response.json();
-                    showAlert(error.message || 'Error adding budget', 'error');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error?.message || 'Error adding budget');
                 }
+
+                showAlert('Budget added successfully', 'success');
+                form.reset();
+                await loadBudgets();
             } catch (error) {
-                showAlert('Error adding budget', 'error');
+                showAlert(error.message || 'Error adding budget', 'error');
+            } finally {
+                // Re-enable form
+                submitButton.disabled = false;
+                submitButton.textContent = 'Add Budget';
             }
         });
 
         // Delete budget
         async function deleteBudget(id) {
-            if (!confirm('Are you sure you want to delete this budget?')) return;
+            if (!id || !confirm('Are you sure you want to delete this budget?')) {
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_BASE_URL}/budgets/${id}`, {
                     method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    showAlert('Budget deleted successfully!', 'success');
-                    await loadBudgets();
-                } else {
+                if (!response.ok) {
                     const error = await response.json();
-                    showAlert(error.message || 'Error deleting budget', 'error');
+                    throw new Error(error.error?.message || 'Error deleting budget');
                 }
+
+                showAlert('Budget deleted successfully', 'success');
+                await loadBudgets();
             } catch (error) {
-                showAlert('Error deleting budget', 'error');
+                showAlert(error.message || 'Error deleting budget', 'error');
             }
         }
 
-        // Load data when page loads
-        document.addEventListener('DOMContentLoaded', loadData);
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            populateYearSelect();
+            loadCategories();
+            loadBudgets();
+        });
     </script>
 </body>
 </html> 

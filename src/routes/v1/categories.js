@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import categoryController from '../../controllers/categoryController.js';
+import { validateRequest } from '../../middleware/validation.js';
+import schemas from '../../validations/schemas.js';
+
 const router = express.Router();
-const categoryController = require('../../controllers/categoryController');
-const validate = require('../../middleware/validator');
-const schemas = require('../../validations/schemas');
 
 // Get all categories
 router.get('/', categoryController.getAll);
@@ -11,10 +12,10 @@ router.get('/', categoryController.getAll);
 router.get('/:id', categoryController.getById);
 
 // Create new category
-router.post('/', validate(schemas.category.create), categoryController.create);
+router.post('/', validateRequest(schemas.category.create), categoryController.create);
 
 // Update category
-router.put('/:id', validate(schemas.category.update), categoryController.update);
+router.put('/:id', validateRequest(schemas.category.update), categoryController.update);
 
 // Delete category
 router.delete('/:id', categoryController.delete);
@@ -25,4 +26,4 @@ router.get('/predefined', categoryController.getPredefined);
 // Get custom categories
 router.get('/custom', categoryController.getCustom);
 
-module.exports = router; 
+export default router; 

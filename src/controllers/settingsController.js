@@ -1,4 +1,4 @@
-const Settings = require('../models/Settings');
+import Settings from '../models/Settings.js';
 
 const settingsController = {
     // Get all settings
@@ -33,16 +33,8 @@ const settingsController = {
     set: async (req, res, next) => {
         try {
             const { key, value } = req.body;
-            if (!key || value === undefined) {
-                return res.status(400).json({
-                    error: {
-                        status: 400,
-                        message: 'Key and value are required'
-                    }
-                });
-            }
-            const result = await Settings.set(key, value);
-            res.json({ key, value: result });
+            await Settings.set(key, value);
+            res.json({ key, value });
         } catch (error) {
             next(error);
         }
@@ -61,8 +53,8 @@ const settingsController = {
     // Get base currency
     getBaseCurrency: async (req, res, next) => {
         try {
-            const currency = await Settings.getBaseCurrency();
-            res.json({ baseCurrency: currency });
+            const value = await Settings.get('base_currency');
+            res.json({ key: 'base_currency', value });
         } catch (error) {
             next(error);
         }
@@ -72,16 +64,8 @@ const settingsController = {
     setBaseCurrency: async (req, res, next) => {
         try {
             const { currencyCode } = req.body;
-            if (!currencyCode) {
-                return res.status(400).json({
-                    error: {
-                        status: 400,
-                        message: 'Currency code is required'
-                    }
-                });
-            }
-            const result = await Settings.setBaseCurrency(currencyCode);
-            res.json({ baseCurrency: result });
+            await Settings.set('base_currency', currencyCode);
+            res.json({ key: 'base_currency', value: currencyCode });
         } catch (error) {
             next(error);
         }
@@ -90,8 +74,8 @@ const settingsController = {
     // Get date format
     getDateFormat: async (req, res, next) => {
         try {
-            const format = await Settings.getDateFormat();
-            res.json({ dateFormat: format });
+            const value = await Settings.get('date_format');
+            res.json({ key: 'date_format', value });
         } catch (error) {
             next(error);
         }
@@ -101,20 +85,12 @@ const settingsController = {
     setDateFormat: async (req, res, next) => {
         try {
             const { format } = req.body;
-            if (!format) {
-                return res.status(400).json({
-                    error: {
-                        status: 400,
-                        message: 'Format is required'
-                    }
-                });
-            }
-            const result = await Settings.setDateFormat(format);
-            res.json({ dateFormat: result });
+            await Settings.set('date_format', format);
+            res.json({ key: 'date_format', value: format });
         } catch (error) {
             next(error);
         }
     }
 };
 
-module.exports = settingsController; 
+export default settingsController; 

@@ -1,28 +1,29 @@
-const express = require('express');
-const router = express.Router();
-const expenseController = require('../../controllers/expenseController');
-const validate = require('../../middleware/validator');
-const schemas = require('../../validations/schemas');
+import express from 'express';
+import expenseController from '../../controllers/expenseController.js';
+import { validateRequest } from '../../middleware/validation.js';
+import schemas from '../../validations/schemas.js';
 
-// Get all expenses with optional filters
-router.get('/', validate(schemas.expense.query, { query: true }), expenseController.getAll);
+const router = express.Router();
+
+// Get all expenses
+router.get('/', validateRequest(schemas.expense.query), expenseController.getAll);
 
 // Get expense by ID
 router.get('/:id', expenseController.getById);
 
 // Create new expense
-router.post('/', validate(schemas.expense.create), expenseController.create);
+router.post('/', validateRequest(schemas.expense.create), expenseController.create);
 
 // Update expense
-router.put('/:id', validate(schemas.expense.update), expenseController.update);
+router.put('/:id', validateRequest(schemas.expense.update), expenseController.update);
 
 // Delete expense
 router.delete('/:id', expenseController.delete);
 
 // Get expenses by category
-router.get('/category/:categoryId', validate(schemas.expense.query, { query: true }), expenseController.getByCategory);
+router.get('/category/:categoryId', validateRequest(schemas.expense.query), expenseController.getByCategory);
 
 // Get total expenses
-router.get('/total', validate(schemas.expense.query, { query: true }), expenseController.getTotal);
+router.get('/total', validateRequest(schemas.expense.query), expenseController.getTotal);
 
-module.exports = router; 
+export default router; 
