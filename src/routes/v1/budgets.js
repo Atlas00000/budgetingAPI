@@ -8,6 +8,9 @@ const router = express.Router();
 // Get all budgets
 router.get('/', validateRequest(schemas.budget.query), budgetController.getAll);
 
+// Get budget status
+router.get('/status', validateRequest(schemas.budget.query), budgetController.getStatus);
+
 // Get budget by ID
 router.get('/:id', budgetController.getById);
 
@@ -19,8 +22,5 @@ router.put('/:id', validateRequest(schemas.budget.update), budgetController.upda
 
 // Delete budget
 router.delete('/:id', budgetController.delete);
-
-// Get budget status
-router.get('/status', validateRequest(schemas.budget.query), budgetController.getStatus);
 
 export default router; 

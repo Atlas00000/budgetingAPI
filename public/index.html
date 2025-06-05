@@ -378,13 +378,18 @@
         // Fetch and display data
         async function loadDashboardData() {
             try {
+                // Get current month and year
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1; // JavaScript months are 0-based
+                const currentYear = now.getFullYear();
+
                 // Fetch expenses
                 const expensesResponse = await fetch(`${API_BASE_URL}/expenses`);
                 const expenses = await expensesResponse.json();
                 updateRecentExpenses(expenses);
 
-                // Fetch budget status
-                const budgetResponse = await fetch(`${API_BASE_URL}/budgets/status`);
+                // Fetch budget status with current month and year
+                const budgetResponse = await fetch(`${API_BASE_URL}/budgets/status?month=${currentMonth}&year=${currentYear}`);
                 const budgetStatus = await budgetResponse.json();
                 updateBudgetStatus(budgetStatus);
 
@@ -470,23 +475,41 @@
         }
 
         function updateSummaryStats(expenses, budgetStatus) {
+            // Calculate total expenses
             const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-            const previousMonthTotal = 0; // This would come from historical data
-            const expenseChange = ((totalExpenses - previousMonthTotal) / previousMonthTotal) * 100;
-
+            
+            // Get current month's budget
+            const currentBudget = budgetStatus.budget || 0;
+            const remaining = currentBudget - totalExpenses;
+            
+            // Update the display values
             document.getElementById('totalExpenses').textContent = 
                 `$${totalExpenses.toFixed(2)}`;
             document.getElementById('monthlyBudget').textContent = 
-                `$${budgetStatus.budget.toFixed(2)}`;
+                `$${currentBudget.toFixed(2)}`;
             document.getElementById('remainingBudget').textContent = 
-                `$${budgetStatus.remaining.toFixed(2)}`;
+                `$${remaining.toFixed(2)}`;
 
-            // Update trends
+            // Calculate percentage of budget used
+            const budgetUsed = (totalExpenses / currentBudget) * 100;
+            
+            // Update trends with budget usage
             document.getElementById('expenseTrend').innerHTML = `
-                <span class="trend ${expenseChange >= 0 ? 'negative' : 'positive'}">
-                    ${expenseChange >= 0 ? '↑' : '↓'} ${Math.abs(expenseChange).toFixed(1)}%
+                <span class="trend ${budgetUsed >= 90 ? 'negative' : budgetUsed >= 75 ? 'warning' : 'positive'}">
+                    ${budgetUsed.toFixed(1)}% of budget used
                 </span>
-                vs last month
+            `;
+            
+            document.getElementById('budgetTrend').innerHTML = `
+                <span class="trend ${remaining < 0 ? 'negative' : 'positive'}">
+                    ${remaining < 0 ? 'Over budget' : 'Under budget'}
+                </span>
+            `;
+            
+            document.getElementById('remainingTrend').innerHTML = `
+                <span class="trend ${remaining < 0 ? 'negative' : 'positive'}">
+                    ${remaining < 0 ? 'Exceeded by $' + Math.abs(remaining).toFixed(2) : 'Remaining'}
+                </span>
             `;
         }
 

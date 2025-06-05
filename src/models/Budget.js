@@ -121,11 +121,13 @@ class Budget {
         return new Promise((resolve, reject) => {
             db.getConnection().get(budgetQuery, budgetParams, async (err, budget) => {
                 if (err) {
+                    console.error('Error getting budget:', err);
                     reject(err);
                     return;
                 }
 
                 if (!budget) {
+                    console.log('No budget found for:', { month, year, categoryId });
                     resolve(null);
                     return;
                 }
@@ -138,16 +140,20 @@ class Budget {
                         categoryId
                     });
 
-                    // Calculate total spent
-                    const totalSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                    // Calculate total spent (default to 0 if no expenses)
+                    const totalSpent = expenses ? expenses.reduce((sum, expense) => sum + expense.amount, 0) : 0;
 
-                    resolve({
+                    const status = {
                         budget: budget.amount,
                         spent: totalSpent,
                         remaining: budget.amount - totalSpent,
                         percentageUsed: (totalSpent / budget.amount) * 100
-                    });
+                    };
+
+                    console.log('Budget status calculated:', status);
+                    resolve(status);
                 } catch (error) {
+                    console.error('Error calculating budget status:', error);
                     reject(error);
                 }
             });
